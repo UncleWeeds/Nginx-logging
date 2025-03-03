@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx_container
+    ports:
+      - "8080:80"
+    depends_on:
+      - fluentd
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: "172.20.0.2:24224"
+        tag: "nginx.access"
+        fluentd-async: "true"
+    networks:
+      - logging_net
+
+  fluentd:
+    image: fluent/fluentd:v1.14-debian-1
+    container_name: fluentd_container
+    hostname: fluentd
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    volumes:
+      - ./fluentd/fluent.conf:/fluentd/etc/fluent.conf:ro
+    networks:
+      logging_net:
+        ipv4_address: 172.20.0.2
+
+networks:
+  logging_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
